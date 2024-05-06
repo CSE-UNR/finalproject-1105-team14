@@ -22,7 +22,7 @@ int main() {
     char filename[100];
 
     while (true) {
-        printf("\n**ERINSTAGRAM**\n");
+        printf("\n**Instagram**\n");
         printf("1: Load image\n");
         printf("2: Display image\n");
         printf("3: Edit image\n");
@@ -144,7 +144,7 @@ void saveImage(char *filename, const int image[MAX_ROWS][MAX_COLS], int rows, in
 }
 
 void editMenu(int image[MAX_ROWS][MAX_COLS], int *rows, int *cols) {
-    printf("\n**ERINSTAGRAM - Edit Menu**\n");
+    printf("\n**Instagram - Edit Menu**\n");
     printf("1: Crop image\n");
     printf("2: Dim image\n");
     printf("3: Brighten image\n");
