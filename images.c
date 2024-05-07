@@ -1,19 +1,22 @@
+//Authors: Dylan Carson & Mohd Shad
+//Purpose: Image Editing & Processing
+//Date: 7 May 2024
+
+
 #include <stdio.h>
 #include <stdbool.h>
 
-#define MAX_ROWS 50
-#define MAX_COLS 50
-#define MAX_PIXEL_LEVELS 5
+#define MAX_ROWS 1000
+#define MAX_COLS 1000
+#define MAPPINGSIZE 5
 
-const char pixel_chars[] = { ' ', '.', 'o', 'O', '0' };
-
-// Function prototypes
 void loadImage(char *filename, int image[MAX_ROWS][MAX_COLS], int *rows, int *cols);
 void displayImage(const int image[MAX_ROWS][MAX_COLS], int rows, int cols);
 void cropImage(int image[MAX_ROWS][MAX_COLS], int *rows, int *cols);
 void adjustBrightness(int image[MAX_ROWS][MAX_COLS], int rows, int cols, int delta);
 void saveImage(char *filename, const int image[MAX_ROWS][MAX_COLS], int rows, int cols);
 void editMenu(int image[MAX_ROWS][MAX_COLS], int *rows, int *cols);
+void rotateCounter(int image[MAX_ROWS][MAX_COLS], int *rows, int *cols);
 
 int main() {
     int image[MAX_ROWS][MAX_COLS] = {0};
@@ -21,17 +24,21 @@ int main() {
     int choice;
     char filename[100];
 
+
     while (true) {
         printf("\n**Instagram**\n");
+
         printf("1: Load image\n");
         printf("2: Display image\n");
         printf("3: Edit image\n");
-        printf("0: Exit\n");
+        printf("0: Exit\n\n");
         printf("Choose from one of the options above: ");
         scanf("%d", &choice);
 
-        if (choice == 0) break;
-
+        if (choice == 0) {
+        	printf("\n\nGoodbye!\n\n"); 
+        	break;
+		}
         switch (choice) {
             case 1:
                 printf("What is the name of the image file? ");
@@ -56,29 +63,70 @@ int main() {
 void loadImage(char *filename, int image[MAX_ROWS][MAX_COLS], int *rows, int *cols) {
     FILE *file = fopen(filename, "r");
     if (file == NULL) {
-        printf("Error opening file %s\n", filename);
+        printf("Error opening file.\n");
         return;
     }
 
-    fscanf(file, "%d %d", rows, cols);
-    for (int i = 0; i < *rows; i++) {
-        for (int j = 0; j < *cols; j++) {
-            fscanf(file, "%d", &image[i][j]);
+    char ch;
+    *rows = 0;
+    *cols = 0;
+    int row = 0;
+    int col = 0;
+    bool first_row = true;
+    int temp_cols = 0;
+
+
+    while ((ch = fgetc(file)) != EOF) {
+        if (ch == '\n') {
+            if (first_row) {
+                *cols = temp_cols;
+                first_row = false;
+            }
+            (*rows)++;
+            temp_cols = 0;
+            row++;
+            col=0;
+        } else {
+            if (ch >= '0' && ch <= '4') {
+            	image[row][col] = ch - '0'; 
+            	col++;
+            	temp_cols++;
+            }
         }
     }
 
-    fclose(file);
-    printf("Image successfully loaded!\n");
+
+    if (col > 0) {
+        if (first_row) {
+            *cols = col;
+        }
+        (*rows)++;
+    }
+
+	fclose(file);
 }
+
 
 void displayImage(const int image[MAX_ROWS][MAX_COLS], int rows, int cols) {
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-            printf("%c", pixel_chars[image[i][j]]);
+	const char mapping[] = {' ', '.', 'o', 'O', '0'};
+	const int mappingSize = sizeof(mapping) / sizeof(mapping[0]);
+
+	
+	printf("\n");
+	for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            int value = image[i][j];
+            if (value >= 0 && value < mappingSize) {
+            printf("%c", mapping[value]);
+        } else {
+        	printf("?");
         }
-        printf("\n");
     }
+    printf("\n");
 }
+printf("\n\n");
+}
+
 
 void cropImage(int image[MAX_ROWS][MAX_COLS], int *rows, int *cols) {
     int left, right, top, bottom;
@@ -111,17 +159,48 @@ void cropImage(int image[MAX_ROWS][MAX_COLS], int *rows, int *cols) {
         }
     }
 
-    printf("Image cropped!\n");
+    printf("\nImage cropped!\n");
 }
 
 void adjustBrightness(int image[MAX_ROWS][MAX_COLS], int rows, int cols, int delta) {
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            image[i][j] = (image[i][j] + delta + MAX_PIXEL_LEVELS) % MAX_PIXEL_LEVELS;
+            int new_brightness = image[i][j] + delta ;
+		if (new_brightness < 0) {
+			new_brightness = 0;
+		} else if (new_brightness >= MAPPINGSIZE) {
+			new_brightness = MAPPINGSIZE - 1;
+		}
+		
+		image[i][j] = new_brightness;
+		
         }
     }
 
-    printf("Image brightness adjusted!\n");
+    printf("\nImage brightness adjusted!\n");
+}
+
+void rotateCounter(int image[MAX_ROWS][MAX_COLS], int *rows, int *cols) {
+	int rotated[MAX_COLS][MAX_ROWS] = {0};
+	int newRows = *cols;
+	int newCols = *rows;
+	
+	for (int i = 0; i < *rows; ++i) {
+		for (int j = 0; j < *cols; ++j) {
+			rotated[*cols - j - 1][i] = image[i][j];
+		}
+	}
+	
+	*rows = newRows;
+	*cols = newCols;
+
+	for (int i = 0; i < *rows; ++i) {
+		for (int j = 0; j < *cols; ++j) {
+			image[i][j] = rotated[i][j];
+		}
+	}
+
+	printf("\nImage Rotated Counterclockwise!\n");
 }
 
 void saveImage(char *filename, const int image[MAX_ROWS][MAX_COLS], int rows, int cols) {
@@ -131,10 +210,10 @@ void saveImage(char *filename, const int image[MAX_ROWS][MAX_COLS], int rows, in
         return;
     }
 
-    fprintf(file, "%d %d\n", rows, cols);
+
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            fprintf(file, "%d ", image[i][j]);
+            fprintf(file, "%d", image[i][j]);
         }
         fprintf(file, "\n");
     }
@@ -145,9 +224,12 @@ void saveImage(char *filename, const int image[MAX_ROWS][MAX_COLS], int rows, in
 
 void editMenu(int image[MAX_ROWS][MAX_COLS], int *rows, int *cols) {
     printf("\n**Instagram - Edit Menu**\n");
+
+
     printf("1: Crop image\n");
     printf("2: Dim image\n");
     printf("3: Brighten image\n");
+    printf("4: Rotate Counterclockwise\n\n");
 
     int editChoice;
     printf("Choose an editing option: ");
@@ -159,18 +241,23 @@ void editMenu(int image[MAX_ROWS][MAX_COLS], int *rows, int *cols) {
         adjustBrightness(image, *rows, *cols, -1); // Dim
     } else if (editChoice == 3) {
         adjustBrightness(image, *rows, *cols, 1); // Brighten
-    } else {
+    } else if (editChoice == 4) {
+    	rotateCounter(image, rows, cols);
+    } 
+    else {
         printf("Invalid choice. Returning to main menu.\n");
         return;
     }
 
+	displayImage(image, *rows, *cols);
+	
     char saveChoice;
-    printf("Would you like to save the edited image? (y/n): ");
+    printf("\nWould you like to save the edited image? (y/n): ");
     scanf(" %c", &saveChoice);
 
     if (saveChoice == 'y') {
         char filename[100];
-        printf("Enter the filename to save the image: ");
+        printf("\nEnter the filename to save the image: ");
         scanf("%s", filename);
         saveImage(filename, image, *rows, *cols);
     }
